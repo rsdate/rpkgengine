@@ -1,3 +1,3 @@
-module github.com/rsdate/rpkg-engine
+module github.com/rsdate/rpkgengine
 
 go 1.21.6
