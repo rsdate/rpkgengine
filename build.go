@@ -2,28 +2,31 @@ package rpkgengine
 
 import (
 	"os"
+	"os/exec"
 
 	mpstruct "github.com/mitchellh/mapstructure"
 	yaml "gopkg.in/yaml.v3"
 )
 
-type Fields struct {
-	Name     string   `yaml:"name"`
-	Version  string   `yaml:"version"`
-	Revision string   `yaml:"revision"`
-	Authors  []string `yaml:"authors"`
+type RpkgBuildFile struct {
+	Name          string   `yaml:"name"`
+	Version       string   `yaml:"version"`
+	Revision      string   `yaml:"revision"`
+	Authors       []string `yaml:"authors"`
+	BuildWith     string   `yaml:"build_with"`
+	BuildCommands []string `yaml:"build_commands"`
 }
 
-func unmarshall(filename string) (int, Fields) {
-	// empty struct for return purposes
-	var g Fields
-	// read the file
+func unmarshall(filename string) (int, RpkgBuildFile) {
+	// Empty struct for return purposes
+	var g RpkgBuildFile
+	// Read the file
 	f, err := os.ReadFile(filename)
 	if err != nil {
 		return 1, g
 	}
-	// create the Fields and interface variables (for unmarshalling)
-	var F Fields
+	// Create the RpkgBuildFile and interface variables (for unmarshalling)
+	var F RpkgBuildFile
 	var raw interface{}
 	// Unmarshall the YAML
 	if err := yaml.Unmarshal(f, &raw); err != nil {
@@ -38,13 +41,21 @@ func unmarshall(filename string) (int, Fields) {
 }
 
 func build() (int, string) {
-	const build_err = "package was not able to be built"
 	code, f := unmarshall("rpkg.build.yaml")
 	if code == 1 {
-		return 1, build_err
+		return 1, "YAML unmarshalling failed."
 	}
-	if err := os.Mkdir(f.Name+"-"+f.Version+"rev"+f.Revision, 0755); err != nil {
-		return 1, build_err
+	switch lang := f.BuildWith; lang {
+	case "python3.13":
+		cmd := exec.Command("python3.13", "-v")
+		if _, err := cmd.Output(); err != nil {
+			return 1, "Python 3.13 was not found on your system."
+		} else {
+			cmds := ""
+			for i := 0; i < len(f.BuildCommands); i++ {
+				cmds = cmds + f.BuildCommands[i]
+			}
+		}
 	}
-	return 0, "package built successfully"
+	return 0, "Package built successfully"
 }
