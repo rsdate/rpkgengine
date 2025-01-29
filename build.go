@@ -53,7 +53,12 @@ func build() (int, string) {
 		} else {
 			cmds := ""
 			for i := 0; i < len(f.BuildCommands); i++ {
-				cmds = cmds + f.BuildCommands[i]
+				cmds = cmds + f.BuildCommands[i] + " && "
+			}
+			cmds = cmds[:len(cmds)-4]
+			cmd := exec.Command(cmds)
+			if _, err := cmd.Output(); err != nil {
+				return 1, "Build commands could not be run"
 			}
 		}
 	}
