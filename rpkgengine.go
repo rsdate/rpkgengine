@@ -1,4 +1,4 @@
-package rpkgengine
+package main
 
 func Hello() string {
 	text := `
