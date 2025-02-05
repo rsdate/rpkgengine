@@ -131,5 +131,6 @@ func build(project string) (int, error) {
 			return 1, errors.New("build commands could not be run")
 		}
 	}
+	fmt.Println("Package built successfully.")
 	return 0, nil
 }
