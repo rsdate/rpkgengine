@@ -1,4 +1,4 @@
-package rpkgengine
+package main
 
 import (
 	"errors"
@@ -7,14 +7,15 @@ import (
 	"os/exec"
 	"strings"
 
-	mpstruct "github.com/mitchellh/mapstructure"
+	mpstruct "github.com/go-viper/mapstructure/v2"
 	yaml "gopkg.in/yaml.v3"
 )
 
+// RpkgBuildFile is the struct for the rpkg.build.yaml file
 type RpkgBuildFile struct {
 	Name          string   `yaml:"name"`
 	Version       string   `yaml:"version"`
-	Revision      string   `yaml:"revision"`
+	Revision      int      `yaml:"revision"`
 	Authors       []string `yaml:"authors"`
 	Deps          []string `yaml:"deps"`
 	BuildDeps     []string `yaml:"build_deps"`
@@ -22,7 +23,7 @@ type RpkgBuildFile struct {
 	BuildCommands []string `yaml:"build_commands"`
 }
 
-func unmarshall(filename string) (int, RpkgBuildFile, error) {
+func Unmarshall(filename string) (int, RpkgBuildFile, error) {
 	// Empty struct for return purposes
 	var g RpkgBuildFile
 	// Read the file
@@ -35,6 +36,7 @@ func unmarshall(filename string) (int, RpkgBuildFile, error) {
 	var raw interface{}
 	// Unmarshall the YAML
 	if err := yaml.Unmarshal(f, &raw); err != nil {
+		fmt.Println(err)
 		return 1, g, errors.New("YAML unmarshalling failed")
 	}
 	// Decode the unmarshalled YAML using mapstructure (shortened to mpstruct)
@@ -46,18 +48,19 @@ func unmarshall(filename string) (int, RpkgBuildFile, error) {
 }
 
 func build(project string) (int, error) {
-	code, f, err := unmarshall(project + "/rpkg.build.yaml")
+	code, f, err := Unmarshall(project + "/rpkg.build.yaml")
 	if code == 1 && err != nil {
 		return 1, errors.New("YAML unmarshalling failed")
 	}
+	os.Chdir(project + "/Package")
 	switch lang := f.BuildWith; lang {
 	case "python3.13":
-		fmt.Printf("Creating new venv for %s...", []any{project}...)
-		c := exec.Command("python3.13", "-m", "venv", project)
-		c.Stdout = nil
-		if _, err := c.Output(); err != nil {
-			return 1, errors.New("could not create venv")
-		}
+		// fmt.Printf("Creating new venv for %s...", []any{project}...)
+		// c := exec.Command("python3.13", "-m", "venv", project)
+		// c.Stdout = nil
+		// if _, err := c.Output(); err != nil {
+		// return 1, errors.New("could not create venv")
+		// }
 		fmt.Print("Scanning for Python... ")
 		cmd := exec.Command("python3.13", "-v")
 		cmd.Stdout = nil
@@ -133,4 +136,12 @@ func build(project string) (int, error) {
 	}
 	fmt.Println("Package built successfully.")
 	return 0, nil
+}
+
+func main() {
+	code, s, err := Unmarshall("./rpkg.build.yaml")
+	if code == 1 && err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(s)
 }
