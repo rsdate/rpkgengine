@@ -6,52 +6,21 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-
-	mpstruct "github.com/go-viper/mapstructure/v2"
-	yaml "gopkg.in/yaml.v3"
 )
 
 // RpkgBuildFile is the struct for the rpkg.build.yaml file
 type RpkgBuildFile struct {
-	Name          string   `yaml:"name"`
-	Version       string   `yaml:"version"`
-	Revision      int      `yaml:"revision"`
-	Authors       []string `yaml:"authors"`
-	Deps          []string `yaml:"deps"`
-	BuildDeps     []string `yaml:"build_deps"`
-	BuildWith     string   `yaml:"build_with"`
-	BuildCommands []string `yaml:"build_commands"`
+	Name          string
+	Version       string
+	Revision      int
+	Authors       []string
+	Deps          []string
+	BuildDeps     []string
+	BuildWith     string
+	BuildCommands []string
 }
 
-func Unmarshall(filename string) (int, RpkgBuildFile, error) {
-	// Empty struct for return purposes
-	var g RpkgBuildFile
-	// Read the file
-	f, err := os.ReadFile(filename)
-	if err != nil {
-		return 1, g, errors.New("wasn't able to read file")
-	}
-	// Create the RpkgBuildFile and interface variables (for unmarshalling)
-	var F RpkgBuildFile
-	var raw interface{}
-	// Unmarshall the YAML
-	if err := yaml.Unmarshal(f, &raw); err != nil {
-		fmt.Println(err)
-		return 1, g, errors.New("YAML unmarshalling failed")
-	}
-	// Decode the unmarshalled YAML using mapstructure (shortened to mpstruct)
-	decoder, _ := mpstruct.NewDecoder(&mpstruct.DecoderConfig{WeaklyTypedInput: true, Result: &F})
-	if err := decoder.Decode(raw); err != nil {
-		return 1, g, errors.New("YAML decoding failed")
-	}
-	return 0, F, nil
-}
-
-func build(project string) (int, error) {
-	code, f, err := Unmarshall(project + "/rpkg.build.yaml")
-	if code == 1 && err != nil {
-		return 1, errors.New("YAML unmarshalling failed")
-	}
+func build(project string, f RpkgBuildFile) (int, error) {
 	os.Chdir(project + "/Package")
 	switch lang := f.BuildWith; lang {
 	case "python3.13":
@@ -136,12 +105,4 @@ func build(project string) (int, error) {
 	}
 	fmt.Println("Package built successfully.")
 	return 0, nil
-}
-
-func main() {
-	code, s, err := Unmarshall("./rpkg.build.yaml")
-	if code == 1 && err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(s)
 }
