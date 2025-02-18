@@ -1,6 +1,6 @@
 module github.com/rsdate/rpkgengine
 
-go 1.21.6
+go 1.24.0
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
