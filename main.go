@@ -11,7 +11,7 @@ var (
 )
 
 func main() {
-	initConfig()
+	initConfig("../rpkg-test/")
 	f.Authors = viper_instance.Get("authors").([]interface{})
 	f.BuildCommands = viper_instance.Get("build_commands").([]interface{})
 	f.BuildDeps = viper_instance.Get("build_deps").([]interface{})
