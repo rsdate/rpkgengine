@@ -12,11 +12,11 @@ var (
 
 func main() {
 	initConfig()
-	f.Authors = []string{viper_instance.Get("authors").(string)}
-	f.BuildCommands = viper_instance.Get("buildCommands").([]string)
-	f.BuildDeps = viper_instance.Get("buildDeps").([]string)
-	f.BuildWith = viper_instance.Get("buildWith").(string)
-	f.Deps = viper_instance.Get("deps").([]string)
+	f.Authors = viper_instance.Get("authors").([]interface{})
+	f.BuildCommands = viper_instance.Get("build_commands").([]interface{})
+	f.BuildDeps = viper_instance.Get("build_deps").([]interface{})
+	f.BuildWith = viper_instance.Get("build_with").(string)
+	f.Deps = viper_instance.Get("deps").([]interface{})
 	f.Name = viper_instance.Get("name").(string)
 	f.Revision = viper_instance.Get("revision").(int)
 	f.Version = viper_instance.Get("version").(string)
