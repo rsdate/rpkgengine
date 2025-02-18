@@ -5,11 +5,11 @@ type RpkgBuildFile struct {
 	Name          string
 	Version       string
 	Revision      int
-	Authors       []string
-	Deps          []string
-	BuildDeps     []string
+	Authors       []interface{}
+	Deps          []interface{}
+	BuildDeps     []interface{}
 	BuildWith     string
-	BuildCommands []string
+	BuildCommands []interface{}
 }
 
 func Hello() string {
