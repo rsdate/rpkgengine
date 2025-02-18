@@ -12,12 +12,12 @@ func Build(project string, f RpkgBuildFile) (int, error) {
 	os.Chdir(project + "/Package")
 	switch lang := f.BuildWith; lang {
 	case "python3.13":
-		// fmt.Printf("Creating new venv for %s...", []any{project}...)
-		// c := exec.Command("python3.13", "-m", "venv", project)
-		// c.Stdout = nil
-		// if _, err := c.Output(); err != nil {
-		// return 1, errors.New("could not create venv")
-		// }
+		fmt.Printf("Creating new venv for %s...", []any{project}...)
+		c := exec.Command("python3.13", "-m", "venv", project)
+		c.Stdout = nil
+		if _, err := c.Output(); err != nil {
+			return 1, errors.New("could not create venv")
+		}
 		fmt.Print("Scanning for Python... ")
 		cmd := exec.Command("python3.13", "-v")
 		cmd.Stdout = nil
@@ -29,9 +29,14 @@ func Build(project string, f RpkgBuildFile) (int, error) {
 			fmt.Println("Installing build dependencies... ")
 		}
 		for i := 0; i < len(f.BuildDeps); i++ {
-			fmt.Printf("Installing %s... ", []any{f.BuildDeps[i]}...)
-			if strings.Contains(f.BuildDeps[i], "@latest") {
-				dep := strings.Split(f.BuildDeps[i], "@")[0]
+			if len(f.BuildDeps) == 0 {
+				fmt.Println("No build dependencies")
+				break
+			} else if dep, ok := f.BuildDeps[i].(string); ok && !strings.Contains(dep, "@") {
+				return 1, fmt.Errorf("build dependency %s is not a valid dependency", dep)
+			} else if dep, ok := f.BuildDeps[i].(string); ok && strings.Contains(dep, "@latest") {
+				fmt.Printf("Installing %s... ", []any{f.BuildDeps[i]}...)
+				dep := strings.Split(f.BuildDeps[i].(string), "@")[0]
 				cmd := exec.Command("python3.13", "-m", "pip", "install", "--upgrade", dep)
 				cmd.Stdout = nil
 				if _, err := cmd.Output(); err != nil {
@@ -41,7 +46,7 @@ func Build(project string, f RpkgBuildFile) (int, error) {
 					fmt.Printf("Installed %s\n", []any{dep}...)
 				}
 			} else {
-				dep := strings.Split(f.BuildDeps[i], "@")
+				dep := strings.Split(f.BuildDeps[i].(string), "@")
 				cmd := exec.Command("python3.13", "-m", "pip", "install", dep[0], "==", dep[1])
 				cmd.Stdout = nil
 				if _, err := cmd.Output(); err != nil {
@@ -55,9 +60,14 @@ func Build(project string, f RpkgBuildFile) (int, error) {
 		fmt.Println("Build dependencies installed")
 		fmt.Println("Installing dependencies... ")
 		for i := 0; i < len(f.Deps); i++ {
-			fmt.Printf("Installing %s... ", []any{f.Deps[i]}...)
-			if strings.Contains(f.Deps[i], "@latest") {
-				dep := strings.Split(f.Deps[i], "@")[0]
+			if len(f.Deps) == 0 {
+				fmt.Println("No dependencies")
+				break
+			} else if dep, ok := f.Deps[i].(string); ok && !strings.Contains(dep, "@") {
+				return 1, fmt.Errorf("dependency %s is not a valid dependency", dep)
+			} else if dep, ok := f.Deps[i].(string); ok && strings.Contains(dep, "@latest") {
+				fmt.Printf("Installing %s... ", []any{f.Deps[i]}...)
+				dep := strings.Split(f.Deps[i].(string), "@")[0]
 				cmd := exec.Command("python3.13", "-m", "pip", "install", "--upgrade", dep)
 				cmd.Stdout = nil
 				if _, err := cmd.Output(); err != nil {
@@ -67,7 +77,7 @@ func Build(project string, f RpkgBuildFile) (int, error) {
 					fmt.Printf("Installed %s\n", []any{dep}...)
 				}
 			} else {
-				dep := strings.Split(f.Deps[i], "@")
+				dep := strings.Split(f.Deps[i].(string), "@")
 				cmd := exec.Command("python3.13", "-m", "pip", "install", dep[0], "==", dep[1])
 				cmd.Stdout = nil
 				if _, err := cmd.Output(); err != nil {
@@ -82,10 +92,14 @@ func Build(project string, f RpkgBuildFile) (int, error) {
 		fmt.Print("Running build commands... ")
 		cmds := ""
 		for i := 0; i < len(f.BuildCommands); i++ {
-			cmds += f.BuildCommands[i] + " && "
+			if cmd, ok := f.BuildCommands[i].(string); ok {
+				cmds += cmd + " && "
+			} else {
+				return 1, fmt.Errorf("build command %v is not a string", f.BuildCommands[i])
+			}
 		}
 		cmds = cmds[:len(cmds)-4]
-		Cmd := exec.Command(cmds)
+		Cmd := exec.Command("sh", "-c", cmds)
 		Cmd.Stdout = nil
 		if _, err := Cmd.Output(); err != nil {
 			return 1, errors.New("build commands could not be run")
