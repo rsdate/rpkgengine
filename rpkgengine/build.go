@@ -7,7 +7,8 @@ import (
 	"os/exec"
 )
 
-func Build(project string, f RpkgBuildFile) (int, error) {
+// Build builds the package
+func Build(project string, f RpkgBuildFile, removeProjectFolder bool) (int, error) {
 	os.Chdir(project + "/Package")
 	switch lang := f.BuildWith; lang {
 	case "python3.13":
@@ -53,6 +54,31 @@ func Build(project string, f RpkgBuildFile) (int, error) {
 		if _, err := Cmd.Output(); err != nil {
 			fmt.Println("Could not run build commands")
 			return 1, errors.New("build commands could not be run")
+		}
+	}
+	fmt.Print("Build commands ran successfully.")
+	fmt.Println("Cleaning up... ")
+	os.Chdir("../")
+	cmd := exec.Command("mv", "./dist", "../dist")
+	cmd.Stdout = nil
+	if _, err := cmd.Output(); err != nil {
+		fmt.Println("Could not move dist folder.")
+		return 1, errors.New("could not move dist folder")
+	}
+	if removeProjectFolder {
+		fmt.Println("Removing project folder... ")
+		cmd2 := exec.Command("rm", "-rf", "./")
+		cmd2.Stdout = nil
+		if _, err := cmd2.Output(); err != nil {
+			fmt.Println("Could not remove project folder.")
+			return 1, errors.New("could not remove project folder")
+		}
+	} else {
+		cmd3 := exec.Command("rm", "-rf", "./"+project)
+		cmd3.Stdout = nil
+		if _, err := cmd3.Output(); err != nil {
+			fmt.Println("Could not remove venv folder.")
+			return 1, errors.New("could not remove venv folder")
 		}
 	}
 	fmt.Println("Package built successfully.")
