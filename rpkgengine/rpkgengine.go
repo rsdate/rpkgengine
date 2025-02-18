@@ -18,6 +18,7 @@ type RpkgBuildFile struct {
 	BuildCommands []interface{}
 }
 
+// Hello returns a string of a text art
 func Hello() string {
 	text := `
 \\  \\  \\  \\  \\                  .. .. .. .. .. ..  
@@ -35,6 +36,8 @@ func Hello() string {
 	`
 	return text
 }
+
+// installDeps installs dependencies
 func installDeps(deps []interface{}, buildDeps bool) (int, error) {
 	// Install dependencies
 	for i := 0; i < len(deps); i++ {
