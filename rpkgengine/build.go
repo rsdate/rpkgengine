@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func build(project string, f RpkgBuildFile) (int, error) {
+func Build(project string, f RpkgBuildFile) (int, error) {
 	os.Chdir(project + "/Package")
 	switch lang := f.BuildWith; lang {
 	case "python3.13":
