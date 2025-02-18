@@ -43,6 +43,7 @@ func Build(project string, f RpkgBuildFile) (int, error) {
 			if cmd, ok := f.BuildCommands[i].(string); ok {
 				cmds += cmd + " && "
 			} else {
+				fmt.Printf("Build command %v is not a string\n", []any{f.BuildCommands[i]}...)
 				return 1, fmt.Errorf("build command %v is not a string", f.BuildCommands[i])
 			}
 		}
@@ -50,6 +51,7 @@ func Build(project string, f RpkgBuildFile) (int, error) {
 		Cmd := exec.Command("sh", "-c", cmds)
 		Cmd.Stdout = nil
 		if _, err := Cmd.Output(); err != nil {
+			fmt.Println("Could not run build commands")
 			return 1, errors.New("build commands could not be run")
 		}
 	}
