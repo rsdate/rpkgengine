@@ -60,7 +60,7 @@ func Build(project string, f RpkgBuildFile) (int, error) {
 		fmt.Println("Build dependencies installed")
 		fmt.Println("Installing dependencies... ")
 		for i := 0; i < len(f.Deps); i++ {
-			if len(f.Deps) == 0 {
+			if f.Deps[0] == "none" {
 				fmt.Println("No dependencies")
 				break
 			} else if dep, ok := f.Deps[i].(string); ok && !strings.Contains(dep, "@") {
