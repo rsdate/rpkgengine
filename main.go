@@ -20,5 +20,5 @@ func main() {
 	f.Name = viper_instance.Get("name").(string)
 	f.Revision = viper_instance.Get("revision").(int)
 	f.Version = viper_instance.Get("version").(string)
-	re.Build("../rpkg-test", f)
+	re.Build("../rpkg-test", f, true)
 }
