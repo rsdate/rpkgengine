@@ -1,5 +1,6 @@
 package rpkgengine
 
+// Total lines in this file: 96
 import (
 	"errors"
 	"fmt"
@@ -14,6 +15,8 @@ import (
 // Returns: It returns an integer and an error. The integer is the exit code of the build process (1 or 0) and the error is any error that occurred during the build process
 func Build(project string, f RpkgBuildFile, removeProjectFolder bool) (int, error) {
 	os.Chdir(project + "/Package")
+	wd, _ := os.Getwd()
+	fmt.Printf("Building package in %v\n", wd)
 	switch lang := f.BuildWith; lang {
 	case "python3.13":
 		// Check if python3.13 is installed
@@ -33,6 +36,8 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool) (int, erro
 		if _, err := cmd2.Output(); err != nil {
 			fmt.Println("Could not upgrade pip")
 			return 1, errors.New("could not upgrade pip")
+		} else {
+			fmt.Println("Pip upgraded successfully")
 		}
 		// Install build dependencies
 		fmt.Println("Installing build dependencies... ")
