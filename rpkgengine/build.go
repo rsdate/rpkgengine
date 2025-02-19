@@ -26,6 +26,14 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool) (int, erro
 		} else {
 			fmt.Print("Found version 3.13\n")
 		}
+		// Upgrade pip
+		fmt.Println("Upgrading pip... ")
+		cmd2 := exec.Command("python3.13", "-m", "pip", "install", "--upgrade", "pip")
+		cmd2.Stdout = nil
+		if _, err := cmd2.Output(); err != nil {
+			fmt.Println("Could not upgrade pip")
+			return 1, errors.New("could not upgrade pip")
+		}
 		// Install build dependencies
 		fmt.Println("Installing build dependencies... ")
 		if _, err := installDeps(f.BuildDeps, true); err != nil {
@@ -50,7 +58,7 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool) (int, erro
 			}
 		}
 		cmds = cmds[:len(cmds)-4]
-		Cmd := exec.Command("sh", "-c", cmds)
+		Cmd := exec.Command("sh", "-c", "'"+cmds+"'")
 		Cmd.Stdout = nil
 		if _, err := Cmd.Output(); err != nil {
 			fmt.Println("Could not run build commands")
