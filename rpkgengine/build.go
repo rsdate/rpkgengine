@@ -7,18 +7,16 @@ import (
 	"os/exec"
 )
 
-// Build builds the package
+// Description: Build builds the package
+//
+// Parameters: It takes the project folder, the build file, and a boolean to remove the project folder after building
+//
+// Returns: It returns an integer and an error. The integer is the exit code of the build process (1 or 0) and the error is any error that occurred during the build process
 func Build(project string, f RpkgBuildFile, removeProjectFolder bool) (int, error) {
 	os.Chdir(project + "/Package")
 	switch lang := f.BuildWith; lang {
 	case "python3.13":
-		fmt.Printf("Creating new venv for %s...\n", []any{project}...)
-		c := exec.Command("python3.13", "-m", "venv", project)
-		c.Stdout = nil
-		if _, err := c.Output(); err != nil {
-			return 1, errors.New("could not create venv")
-		}
-		fmt.Println("Venv created")
+		// Check if python3.13 is installed
 		fmt.Print("Scanning for Python... ")
 		cmd := exec.Command("python3.13", "-v")
 		cmd.Stdout = nil
@@ -27,17 +25,20 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool) (int, erro
 			return 1, errors.New("python 3.13 was not found on your system")
 		} else {
 			fmt.Print("Found version 3.13\n")
-			fmt.Println("Installing build dependencies... ")
 		}
+		// Install build dependencies
+		fmt.Println("Installing build dependencies... ")
 		if _, err := installDeps(f.BuildDeps, true); err != nil {
 			return 1, err
 		}
 		fmt.Println("Build dependencies installed")
+		// Install dependencies
 		fmt.Println("Installing dependencies... ")
 		if _, err := installDeps(f.Deps, false); err != nil {
 			return 1, err
 		}
 		fmt.Println("Dependencies installed")
+		// Run build commands
 		fmt.Print("Running build commands... ")
 		cmds := ""
 		for i := 0; i < len(f.BuildCommands); i++ {
@@ -57,6 +58,7 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool) (int, erro
 		}
 	}
 	fmt.Print("Build commands ran successfully.")
+	// Clean up
 	fmt.Println("Cleaning up... ")
 	os.Chdir("../")
 	cmd := exec.Command("mv", "./dist", "../dist")
@@ -73,14 +75,8 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool) (int, erro
 			fmt.Println("Could not remove project folder.")
 			return 1, errors.New("could not remove project folder")
 		}
-	} else {
-		cmd3 := exec.Command("rm", "-rf", "./"+project)
-		cmd3.Stdout = nil
-		if _, err := cmd3.Output(); err != nil {
-			fmt.Println("Could not remove venv folder.")
-			return 1, errors.New("could not remove venv folder")
-		}
 	}
+	// Success (exit code 0)
 	fmt.Println("Package built successfully.")
 	return 0, nil
 }

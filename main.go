@@ -6,10 +6,15 @@ import (
 )
 
 var (
-	f              re.RpkgBuildFile = re.RpkgBuildFile{}
-	viper_instance                  = viper.GetViper()
+	// f is the struct that holds the data from rpkg.build.yaml file
+	f re.RpkgBuildFile = re.RpkgBuildFile{}
+	// viper_instance is the viper instance (used to remove redundancy)
+	viper_instance = viper.GetViper()
 )
 
+// This function is mainly for standalone testing (not recommended for production).
+// It initializes the configuration and builds the package.
+// It uses the rpkg-test package.
 func main() {
 	initConfig("../rpkg-test/")
 	f.Authors = viper_instance.Get("authors").([]interface{})
