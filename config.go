@@ -1,5 +1,6 @@
 package main
 
+// Total lines in this file: 21
 import (
 	"github.com/spf13/viper"
 )

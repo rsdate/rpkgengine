@@ -1,5 +1,7 @@
 package main
 
+// Total lines in the package: 448
+// Total lines in this file: 30
 import (
 	re "github.com/rsdate/rpkgengine/rpkgengine"
 	"github.com/spf13/viper"
