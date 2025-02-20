@@ -63,18 +63,17 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool) (int, erro
 			}
 		}
 		cmds = cmds[:len(cmds)-4]
-		Cmd := exec.Command("sh", "-c", "'"+cmds+"'")
+		Cmd := exec.Command("sh", "-c", cmds)
 		Cmd.Stdout = nil
 		if _, err := Cmd.Output(); err != nil {
 			fmt.Println("Could not run build commands")
 			return 1, errors.New("build commands could not be run")
 		}
 	}
-	fmt.Print("Build commands ran successfully.")
+	fmt.Println("Build commands ran successfully.")
 	// Clean up
 	fmt.Println("Cleaning up... ")
-	os.Chdir("../")
-	cmd := exec.Command("mv", "./dist", "../dist")
+	cmd := exec.Command("mv", "./dist/", "../dist/")
 	cmd.Stdout = nil
 	if _, err := cmd.Output(); err != nil {
 		fmt.Println("Could not move dist folder.")
