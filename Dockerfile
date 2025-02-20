@@ -1,4 +1,4 @@
-FROM --platform=arm64v8 go:1.24.0 as builder
+FROM golang:1.24.0 as builder
 WORKDIR /app
 COPY . .
 RUN go mod download
