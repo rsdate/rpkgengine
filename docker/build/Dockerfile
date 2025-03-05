@@ -7,11 +7,12 @@ RUN \
 go get -u ./... && go mod download
 COPY --chmod=755 ./build.sh /app/build.sh
 COPY . .
-RUN \ --mount=type=cache,target=/root/.cache/go-build \
+RUN \ 
+--mount=type=cache,target=/root/.cache/go-build \
 /app/build.sh && tar -czf rpkengine.tar.gz ./bin/
 
 FROM ubuntu:24.04 AS run
 WORKDIR /app
 COPY --from=builder /app/rpkengine.tar.gz ./rpkgengine.tar.gz
-RUN tar -xzf rpkengine.tar.gz && rm -rf rpkengine.tar.gz
+RUN tar -xzf ./rpkgengine.tar.gz && rm ./rpkgengine.tar.gz
 ENTRYPOINT ["/bin/bash"]
