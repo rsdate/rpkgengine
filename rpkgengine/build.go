@@ -21,12 +21,8 @@ var (
 	Em = errChecker.EM
 )
 
-// Description: Build builds the package
-//
-// Parameters: It takes the project folder, the build file, and a boolean to remove the project folder after building
-//
-// Returns: It returns an integer and an error. The integer is the exit code of the build process (1 or 0) and the error is any error that occurred during the build process
-func Build(project string, f RpkgBuildFile, removeProjectFolder bool) (int, error) {
+// Build builds the package using the rpkg.build.yaml file as a struct. It also takes the project path and a boolean to check if the project folder should be removed after building.
+func Build(project string, f RpkgBuildFile, removeProjectFolder bool) error {
 	os.Chdir(project + "/Package")
 	wd := project + "/Package"
 	fmt.Printf("Building package in %v\n", wd)
@@ -38,7 +34,11 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool) (int, erro
 			cmd := exec.Command("python3", "--version")
 			return cmd.Output()
 		})
-		fmt.Printf("Found version %s\n", t.Cast(val, false, "string").(string)[7:])
+		verStr := ""
+		for i := range val.([]byte) {
+			verStr += string(val.([]byte)[i])
+		}
+		fmt.Printf("Found version %s\n", t.Cast(verStr, false, "string").(string)[7:])
 		// Upgrade pip
 		fmt.Print("Upgrading pip... ")
 		var _, _ = errChecker.CheckErr(Em[""], func() (any, error) {
@@ -47,13 +47,13 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool) (int, erro
 		})
 		fmt.Println("Pip upgraded successfully")
 		// Install build dependencies
-		fmt.Print("Installing build dependencies... ")
+		fmt.Println("Installing build dependencies... ")
 		var _, _ = errChecker.CheckErr(Em[""], func() (any, error) {
 			return nil, installPythonDeps(f.BuildDeps, true)
 		})
 		fmt.Println("Build dependencies installed")
 		// Install dependencies
-		fmt.Print("Installing dependencies... ")
+		fmt.Println("Installing dependencies... ")
 		var _, _ = errChecker.CheckErr(Em[""], func() (any, error) {
 			return nil, installPythonDeps(f.Deps, false)
 		})
@@ -100,8 +100,9 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool) (int, erro
 			}
 			return nil, nil
 		})
-		// Success (exit code 0)
 	}
+
+	// Success (exit code 0)
 	fmt.Println("Package built successfully.")
-	return 0, nil
+	return nil
 }

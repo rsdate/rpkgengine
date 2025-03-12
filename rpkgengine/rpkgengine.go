@@ -56,56 +56,53 @@ func Hello() string {
 //
 // Returns: It returns an error. The error is any error that occurred during the dependency installation process.
 func installPythonDeps(deps []any, buildDeps bool) error {
-	var _, err = errChecker.CheckErr(Em[""], func() (any, error) {
-		for i := range deps {
-			if deps[0] == "none" {
+	for i := range deps {
+		if deps[0] == "none" {
+			if buildDeps {
+				fmt.Println("No build dependencies")
+				break
+			} else {
+				fmt.Println("No dependencies")
+				break
+			}
+		} else if dep, ok := deps[i].(string); ok && !strings.Contains(dep, "@") {
+			if buildDeps {
+				fmt.Printf("Build dependency %s is not a valid dependency\n", []any{dep}...)
+				return fmt.Errorf("build dependency %s is not a valid dependency", dep)
+			} else {
+				fmt.Printf("Dependency %s is not a valid dependency\n", []any{dep}...)
+				return fmt.Errorf("dependency %s is not a valid dependency", dep)
+			}
+		} else if dep, ok := deps[i].(string); ok && strings.Contains(dep, "@latest") {
+			fmt.Printf("Installing %s... ", []any{deps[i]}...)
+			dep := strings.Split(deps[i].(string), "@")[0]
+			cmd := exec.Command("python3.13", "-m", "pip", "install", "--upgrade", dep)
+			cmd.Stdout = nil
+			if _, err := cmd.Output(); err != nil {
+				fmt.Printf("Could not install %s\n", []any{dep}...)
 				if buildDeps {
-					fmt.Println("No build dependencies")
-					break
+					return fmt.Errorf("could not install build dependency %s", dep)
 				} else {
-					fmt.Println("No dependencies")
-					break
-				}
-			} else if dep, ok := deps[i].(string); ok && !strings.Contains(dep, "@") {
-				if buildDeps {
-					fmt.Printf("Build dependency %s is not a valid dependency\n", []any{dep}...)
-					return nil, fmt.Errorf("build dependency %s is not a valid dependency", dep)
-				} else {
-					fmt.Printf("Dependency %s is not a valid dependency\n", []any{dep}...)
-					return nil, fmt.Errorf("dependency %s is not a valid dependency", dep)
-				}
-			} else if dep, ok := deps[i].(string); ok && strings.Contains(dep, "@latest") {
-				fmt.Printf("Installing %s... ", []any{deps[i]}...)
-				dep := strings.Split(deps[i].(string), "@")[0]
-				cmd := exec.Command("python3.13", "-m", "pip", "install", "--upgrade", dep)
-				cmd.Stdout = nil
-				if _, err := cmd.Output(); err != nil {
-					fmt.Printf("Could not install %s\n", []any{dep}...)
-					if buildDeps {
-						return nil, fmt.Errorf("could not install build dependency %s", dep)
-					} else {
-						return nil, fmt.Errorf("could not install dependency %s", dep)
-					}
-				} else {
-					fmt.Printf("Installed %s\n", []any{dep}...)
+					return fmt.Errorf("could not install dependency %s", dep)
 				}
 			} else {
-				dep := strings.Split(deps[i].(string), "@")
-				cmd := exec.Command("python3.13", "-m", "pip", "install", dep[0], "==", dep[1])
-				cmd.Stdout = nil
-				if _, err := cmd.Output(); err != nil {
-					fmt.Printf("Could not install %s\n", []any{dep}...)
-					if buildDeps {
-						return nil, fmt.Errorf("could not install build dependency %s", dep)
-					} else {
-						return nil, fmt.Errorf("could not install dependency %s", dep)
-					}
+				fmt.Printf("Installed %s\n", []any{dep}...)
+			}
+		} else {
+			dep := strings.Split(deps[i].(string), "@")
+			cmd := exec.Command("python3.13", "-m", "pip", "install", dep[0], "==", dep[1])
+			cmd.Stdout = nil
+			if _, err := cmd.Output(); err != nil {
+				fmt.Printf("Could not install %s\n", []any{dep}...)
+				if buildDeps {
+					return fmt.Errorf("could not install build dependency %s", dep)
 				} else {
-					fmt.Printf("Installed %s\n", []any{dep[0]}...)
+					return fmt.Errorf("could not install dependency %s", dep)
 				}
+			} else {
+				fmt.Printf("Installed %s\n", []any{dep[0]}...)
 			}
 		}
-		return nil, nil
-	})
-	return err
+	}
+	return nil
 }
