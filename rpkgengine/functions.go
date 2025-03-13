@@ -138,11 +138,11 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool) error {
 				}
 			}
 			cmds = cmds[:len(cmds)-4]
+			fmt.Println(cmds)
 			Cmd := exec.Command("sh", "-c", cmds)
 			Cmd.Stdout = nil
 			if _, err := Cmd.Output(); err != nil {
-				fmt.Println("Could not run build commands")
-				return 1, errors.New("build commands could not be run")
+				return nil, errors.New("build commands could not be run")
 			}
 			return nil, nil
 		})
