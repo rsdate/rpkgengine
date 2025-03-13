@@ -1,25 +1,92 @@
 package rpkgengine
 
-// Total lines in this file: 96
 import (
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
-
-	e "github.com/rsdate/utils/errors"
-	t "github.com/rsdate/utils/types"
+	"strings"
 )
 
-var (
-	errChecker = e.ErrChecker{
-		ErrPrefix: "build error",
-		PanicMode: "true",
-		EM:        e.EM["eMre"],
-		TestMode:  false,
+// Description: Hello is a function to introduce rpkg
+//
+// Parameters: None
+//
+// Returns: It returns a string of a text art.
+func Hello() string {
+	text := `
+\\  \\  \\  \\  \\                  .. .. .. .. .. ..  
+\\                \\              ..                 ..
+\\                \\              ..                 ..
+\\                \\              ..                 ..
+\\                \\              ..                 ..
+\\  \\  \\  \\  \\                .. .. .. .. .. .. ..              
+\\           \\                   ..
+\\            \\                  ..
+\\             \\                 ..
+\\              \\                ..
+\\               \\               ..
+\\                \\              ..
+	`
+	return text
+}
+
+// Description: installDeps installs dependencies. It is a helper function for the Build function (also so that it wasn't too long).
+//
+// Parameters: It takes a list of dependencies and a boolean to check if the dependencies are build dependencies.
+//
+// Returns: It returns an error. The error is any error that occurred during the dependency installation process.
+func installPythonDeps(deps []any, buildDeps bool) error {
+	for i := range deps {
+		if deps[0] == "none" {
+			if buildDeps {
+				fmt.Println("No build dependencies")
+				break
+			} else {
+				fmt.Println("No dependencies")
+				break
+			}
+		} else if dep, ok := deps[i].(string); ok && !strings.Contains(dep, "@") {
+			if buildDeps {
+				fmt.Printf("Build dependency %s is not a valid dependency\n", []any{dep}...)
+				return fmt.Errorf("build dependency %s is not a valid dependency", dep)
+			} else {
+				fmt.Printf("Dependency %s is not a valid dependency\n", []any{dep}...)
+				return fmt.Errorf("dependency %s is not a valid dependency", dep)
+			}
+		} else if dep, ok := deps[i].(string); ok && strings.Contains(dep, "@latest") {
+			fmt.Printf("Installing %s... ", []any{deps[i]}...)
+			dep := strings.Split(deps[i].(string), "@")[0]
+			cmd := exec.Command("python3.13", "-m", "pip", "install", "--upgrade", dep)
+			cmd.Stdout = nil
+			if _, err := cmd.Output(); err != nil {
+				fmt.Printf("Could not install %s\n", []any{dep}...)
+				if buildDeps {
+					return fmt.Errorf("could not install build dependency %s", dep)
+				} else {
+					return fmt.Errorf("could not install dependency %s", dep)
+				}
+			} else {
+				fmt.Printf("Installed %s\n", []any{dep}...)
+			}
+		} else {
+			dep := strings.Split(deps[i].(string), "@")
+			cmd := exec.Command("python3.13", "-m", "pip", "install", dep[0], "==", dep[1])
+			cmd.Stdout = nil
+			if _, err := cmd.Output(); err != nil {
+				fmt.Printf("Could not install %s\n", []any{dep}...)
+				if buildDeps {
+					return fmt.Errorf("could not install build dependency %s", dep)
+				} else {
+					return fmt.Errorf("could not install dependency %s", dep)
+				}
+			} else {
+				fmt.Printf("Installed %s\n", []any{dep[0]}...)
+			}
+		}
 	}
-	Em = errChecker.EM
-)
+	return nil
+}
 
 // Build builds the package using the rpkg.build.yaml file as a struct. It also takes the project path and a boolean to check if the project folder should be removed after building.
 func Build(project string, f RpkgBuildFile, removeProjectFolder bool) error {
@@ -38,7 +105,7 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool) error {
 		for i := range val.([]byte) {
 			verStr += string(val.([]byte)[i])
 		}
-		fmt.Printf("Found version %s\n", t.Cast(verStr, false, "string").(string)[7:])
+		fmt.Printf("Found version %s", verStr[7:])
 		// Upgrade pip
 		fmt.Print("Upgrading pip... ")
 		var _, _ = errChecker.CheckErr(Em[""], func() (any, error) {
@@ -81,7 +148,7 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool) error {
 		})
 		fmt.Println("Build commands ran successfully.")
 		// Clean up
-		fmt.Print("Cleaning up... ")
+		fmt.Println("Cleaning up... ")
 		var _, _ = errChecker.CheckErr(Em[""], func() (any, error) {
 			cmd := exec.Command("mv", "./dist/", "../dist/")
 			cmd.Stdout = nil

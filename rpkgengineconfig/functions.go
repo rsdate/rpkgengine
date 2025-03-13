@@ -1,4 +1,4 @@
-package main
+package rpkgengineconfig
 
 // Total lines in this file: 21
 import (
@@ -10,7 +10,7 @@ import (
 // Parameters: It takes the project path
 //
 // Returns: It returns an integer and an error. The integer is the exit code of the configuration initialization process (1 or 0) and the error is any error that occurred during the configuration initialization process
-func initConfig(projectPath string) (int, error) {
+func InitConfig(projectPath string) (int, error) {
 	viper.SetConfigName("rpkg.build")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(projectPath)
