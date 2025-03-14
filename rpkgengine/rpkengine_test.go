@@ -38,7 +38,7 @@ func TestRpkgengineBuild(t *testing.T) {
 		f.Name = viper_instance.Get("name").(string)
 		f.Revision = viper_instance.Get("revision").(int)
 		f.Version = viper_instance.Get("version").(string)
-		err = re.Build("../rpkg-test", f, false)
+		err = re.Build("../../rpkg-test", f, false)
 		return nil, err
 	})
 	if err != nil {
