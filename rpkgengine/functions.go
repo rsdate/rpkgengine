@@ -91,7 +91,7 @@ func installPythonDeps(deps []any, buildDeps bool) error {
 // Build builds the package using the rpkg.build.yaml file as a struct. It also takes the project path and a boolean to check if the project folder should be removed after building.
 func Build(project string, f RpkgBuildFile, removeProjectFolder bool) error {
 	os.Chdir(project + "/Package")
-	wd := project + "/Package"
+	wd, _ := os.Getwd()
 	fmt.Printf("Building package in %v\n", wd)
 	switch lang := f.BuildWith; lang {
 	case "python3.13":
@@ -168,7 +168,6 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool) error {
 			return nil, nil
 		})
 	}
-
 	// Success (exit code 0)
 	fmt.Println("Package built successfully.")
 	return nil
