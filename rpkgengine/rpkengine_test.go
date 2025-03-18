@@ -31,10 +31,43 @@ func TestRpkgengineBuild(t *testing.T) {
 	var _, err = errCheckerTest.CheckErr(Em[""], func() (any, error) {
 		var _, err = rec.InitConfig("../../rpkg-test/")
 		f = re.InitVars(viper_instance)
-		err = re.Build("../../rpkg-test", f, false, re.ErrCheckerBuild)
+		err = re.Build("../../rpkg-test", f, false, errCheckerTest)
 		return nil, err
 	})
 	if err != nil {
 		t.Errorf("Error: %v", err)
 	}
 }
+
+func TestDownloadPackage(t *testing.T) {
+	var _, err = errCheckerTest.CheckErr(Em[""], func() (any, error) {
+		err := re.DownloadPackage("./libdaemon-0.0.1.tar.gz", "https://rsdate.github.io/projects/libdaemon-0.0.1.tar.gz", errCheckerTest)
+		return nil, err
+	})
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+}
+
+func TestBuildPackage(t *testing.T) {
+	var _, err = errCheckerTest.CheckErr(Em[""], func() (any, error) {
+		var _, err = rec.InitConfig("../../rpkg-test/")
+		err = re.BuildPackage("../../rpkg-test/", errCheckerTest)
+		return nil, err
+	})
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+}
+
+/* Not just yet
+func TestInstallPackage(t *testing.T) {
+	var _, err = errCheckerTest.CheckErr(Em[""], func() (any, error) {
+		err := re.InstallPackage("./libdaemon-0.0.1.tar.gz", "lidaemon-0.0.1.tar.gz", "libdaemon-0.0.1", "false", true, errCheckerTest)
+		return nil, err
+	})
+	if err == nil {
+		t.Errorf("Error: no error returned")
+	}
+}
+*/
