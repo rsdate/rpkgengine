@@ -201,19 +201,23 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool, errChecker
 	return nil
 }
 
-func DownloadPackage(filepath string, url string, panicMode string, errChecker e.ErrChecker) error {
+func DownloadPackage(filepath string, url string, errChecker e.ErrChecker) error {
 	// Create the file
+	fmt.Fprint(os.Stdout, []any{"Creating the file... "}...)
 	out, err := os.Create(filepath)
 	errChecker.CheckErr(Emb["dwnerr1"], func() (any, error) {
 		return nil, err
 	})
+	fmt.Fprintln(os.Stdout, []any{"File created successfully."}...)
 	defer out.Close()
 
 	// Get the data
+	fmt.Fprint(os.Stdout, []any{"Downloading the file... "}...)
 	resp, err := http.Get(url)
 	errChecker.CheckErr(Emb["dwnerr2"], func() (any, error) {
 		return nil, err
 	})
+	fmt.Fprintln(os.Stdout, []any{"File downloaded successfully."}...)
 	defer resp.Body.Close()
 
 	// Check server response
@@ -238,18 +242,18 @@ func DownloadPackage(filepath string, url string, panicMode string, errChecker e
 		errChecker.CheckErr(Emb["dwnerr7"], func() (any, error) {
 			return nil, errors.New(Emb["dwnerr7"])
 		})
-	case http.StatusOK:
-		return nil
 	}
 	// Write the body to file
+	fmt.Fprint(os.Stdout, []any{"Writing the download to the file... "}...)
 	_, err = io.Copy(out, resp.Body)
 	errChecker.CheckErr(Emb["dwnerr8"], func() (any, error) {
 		return nil, err
 	})
+	fmt.Fprintln(os.Stdout, []any{"File written to successfully."}...)
 	return nil
 }
 
-func BuildPackage(projectPath string, panicMode string, errChecker e.ErrChecker) error {
+func BuildPackage(projectPath string, errChecker e.ErrChecker) error {
 	if viper_instance == nil {
 		errChecker.CheckErr(Emb["blderr1"], func() (any, error) {
 			return nil, errors.New(Emb["blderr1"])
@@ -266,14 +270,14 @@ func BuildPackage(projectPath string, panicMode string, errChecker e.ErrChecker)
 	return nil
 }
 
-func InstallPackage(downloadPath string, projectPath string, dirName string, panicMode string, errChecker e.ErrChecker) error {
+func InstallPackage(downloadPath string, projectPath string, dirName string, noInstallConf bool, errChecker e.ErrChecker) error {
 	fullName := "https://" + os.Getenv(mirror) + "/projects/" + projectPath
 	fmt.Fprintf(os.Stdout, "The package path on the mirror is %s and it will download to %s.\nWould you like to proceed with the installation? [Y or n]", []any{projectPath, downloadPath}...)
 	fmt.Fscan(os.Stdin, &conf)
-	if conf == "Y" {
+	if conf == "Y" || noInstallConf {
 		fmt.Fprint(os.Stdout, []any{"Downloading package... "}...)
 		errChecker.CheckErr(Emb["insterr1"], func() (any, error) {
-			err := DownloadPackage(downloadPath, fullName, panicMode, errChecker)
+			err := DownloadPackage(downloadPath, fullName, errChecker)
 			return nil, err
 		})
 		fmt.Fprintln(os.Stdout, []any{"Package downloaded successfully."}...)
@@ -288,7 +292,7 @@ func InstallPackage(downloadPath string, projectPath string, dirName string, pan
 		fmt.Fprint(os.Stdout, []any{"Building package... "}...)
 		errChecker.CheckErr(Emb["insterr3"], func() (any, error) {
 			os.Chdir(dirName)
-			err := BuildPackage(".", panicMode, errChecker)
+			err := BuildPackage(".", errChecker)
 			return nil, err
 		})
 		fmt.Fprintln(os.Stdout, []any{"Installation completed! 🎉"}...)
