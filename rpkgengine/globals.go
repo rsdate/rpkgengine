@@ -15,5 +15,5 @@ var (
 		EM:        e.EM["eMre"],
 		TestMode:  false,
 	}
-	Emb = ErrCheckerBuild.EM
+	Emre = e.EM["eMre"]
 )
