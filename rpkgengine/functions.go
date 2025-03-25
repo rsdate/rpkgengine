@@ -11,6 +11,7 @@ import (
 
 	rec "github.com/rsdate/rpkgengine/rpkgengineconfig"
 	e "github.com/rsdate/utils/errors"
+	pbar "github.com/schollz/progressbar/v3"
 	"github.com/spf13/viper"
 )
 
@@ -37,12 +38,8 @@ func Hello() string {
 	return text
 }
 
-// Description: installDeps installs dependencies. It is a helper function for the Build function (also so that it wasn't too long).
-//
-// Parameters: It takes a list of dependencies and a boolean to check if the dependencies are build dependencies.
-//
-// Returns: It returns an error. The error is any error that occurred during the dependency installation process.
-func installPythonDeps(deps []any, buildDeps bool) error {
+// installDeps is a function to install the dependecies (or build dependencies) from deps
+func InstallDeps(deps []any, buildDeps bool, name string, installCommands map[string][]string, versionDelimiter string) error {
 	for i := range deps {
 		if deps[0] == "none" {
 			if buildDeps {
@@ -63,7 +60,10 @@ func installPythonDeps(deps []any, buildDeps bool) error {
 		} else if dep, ok := deps[i].(string); ok && strings.Contains(dep, "@latest") {
 			fmt.Printf("Installing %s... ", []any{deps[i]}...)
 			dep := strings.Split(deps[i].(string), "@")[0]
-			cmd := exec.Command("python3.13", "-m", "pip", "install", "--upgrade", dep)
+			commands := []string{}
+			commands = append(commands, installCommands["latest"]...)
+			commands = append(commands, dep)
+			cmd := exec.Command(name, commands...)
 			cmd.Stdout = nil
 			if _, err := cmd.Output(); err != nil {
 				fmt.Printf("Could not install %s\n", []any{dep}...)
@@ -76,8 +76,12 @@ func installPythonDeps(deps []any, buildDeps bool) error {
 				fmt.Printf("Installed %s\n", []any{dep}...)
 			}
 		} else {
+			fmt.Printf("Installing %s... ", []any{deps[i]}...)
 			dep := strings.Split(deps[i].(string), "@")
-			cmd := exec.Command("python3.13", "-m", "pip", "install", dep[0], "==", dep[1])
+			commands := []string{}
+			commands = append(commands, installCommands["version"]...)
+			commands = append(commands, dep[0]+versionDelimiter+dep[1])
+			cmd := exec.Command(name, commands...)
 			cmd.Stdout = nil
 			if _, err := cmd.Output(); err != nil {
 				fmt.Printf("Could not install %s\n", []any{dep}...)
@@ -96,23 +100,15 @@ func installPythonDeps(deps []any, buildDeps bool) error {
 
 // InitVars initializes the variables from the rpkg.build.yaml file and fills the RpkgBuildFile struct with the data.
 func InitVars(viper_instance *viper.Viper) RpkgBuildFile {
-	name := viper_instance.Get("name").(string)
-	version := viper_instance.Get("version").(string)
-	revision := viper_instance.Get("revision").(int)
-	authors := viper_instance.Get("authors").([]interface{})
-	deps := viper_instance.Get("deps").([]interface{})
-	buildDeps := viper_instance.Get("build_deps").([]interface{})
-	buildWith := viper_instance.Get("build_with").(string)
-	buildCommands := viper_instance.Get("build_commands").([]interface{})
 	f := RpkgBuildFile{
-		Name:          name,
-		Version:       version,
-		Revision:      revision,
-		Authors:       authors,
-		Deps:          deps,
-		BuildDeps:     buildDeps,
-		BuildWith:     buildWith,
-		BuildCommands: buildCommands,
+		Name:          viper_instance.Get("name").(string),
+		Version:       viper_instance.Get("version").(string),
+		Revision:      viper_instance.Get("revision").(int),
+		Authors:       viper_instance.Get("authors").([]any),
+		Deps:          viper_instance.Get("deps").([]any),
+		BuildDeps:     viper_instance.Get("build_deps").([]any),
+		BuildWith:     viper_instance.Get("build_with").(string),
+		BuildCommands: viper_instance.Get("build_commands").([]any),
 	}
 	return f
 }
@@ -121,7 +117,7 @@ func InitVars(viper_instance *viper.Viper) RpkgBuildFile {
 func Build(project string, f RpkgBuildFile, removeProjectFolder bool, errChecker e.ErrChecker) error {
 	os.Chdir(project + "/Package")
 	wd, _ := os.Getwd()
-	fmt.Printf("Building package in %v\n", wd)
+	fmt.Printf("Building package in %v\n", wd[:len(wd)-8])
 	switch lang := f.BuildWith; lang {
 	case "python3.13":
 		// Check if python3.13 is installed
@@ -145,13 +141,19 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool, errChecker
 		// Install build dependencies
 		fmt.Println("Installing build dependencies... ")
 		errChecker.CheckErr("blderr3", func() (any, error) {
-			return nil, installPythonDeps(f.BuildDeps, true)
+			return nil, InstallDeps(f.BuildDeps, true, "pip", map[string][]string{
+				"latest":  {"install", "--upgrade"},
+				"version": {"install"},
+			}, "==")
 		})
 		fmt.Println("Build dependencies installed")
 		// Install dependencies
 		fmt.Println("Installing dependencies... ")
 		errChecker.CheckErr("blderr4", func() (any, error) {
-			return nil, installPythonDeps(f.Deps, false)
+			return nil, InstallDeps(f.Deps, false, "pip", map[string][]string{
+				"latest":  {"install", "--upgrade"},
+				"version": {"install"},
+			}, "==")
 		})
 		fmt.Println("Dependencies installed")
 		// Run build commands
@@ -203,6 +205,7 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool, errChecker
 	return nil
 }
 
+// DownloadPackage downloads a package to the filepath parameter from the url.
 func DownloadPackage(filepath string, url string, errChecker e.ErrChecker) error {
 	// Create the file
 	fmt.Fprint(os.Stdout, []any{"Creating the file... "}...)
@@ -212,16 +215,12 @@ func DownloadPackage(filepath string, url string, errChecker e.ErrChecker) error
 	})
 	fmt.Fprintln(os.Stdout, []any{"File created successfully."}...)
 	defer out.Close()
-
 	// Get the data
-	fmt.Fprint(os.Stdout, []any{"Downloading the file... "}...)
 	resp, err := http.Get(url)
 	errChecker.CheckErr("dwnerr2", func() (any, error) {
 		return nil, err
 	})
-	fmt.Fprintln(os.Stdout, []any{"File downloaded successfully."}...)
 	defer resp.Body.Close()
-
 	// Check server response
 	switch code := resp.StatusCode; code {
 	case http.StatusNotFound:
@@ -245,22 +244,27 @@ func DownloadPackage(filepath string, url string, errChecker e.ErrChecker) error
 			return nil, errors.New(Emre["dwnerr7"])
 		})
 	}
-	// Write the body to file
-	fmt.Fprint(os.Stdout, []any{"Writing the download to the file... "}...)
-	_, err = io.Copy(out, resp.Body)
-	errChecker.CheckErr("dwnerr8", func() (any, error) {
+	// Create a progress bar
+	bar := pbar.DefaultBytes(
+		resp.ContentLength,
+		"Downloading the file...",
+	)
+	errChecker.CheckErr("", func() (any, error) {
+		_, err := io.Copy(io.MultiWriter(out, bar), resp.Body)
 		return nil, err
 	})
-	fmt.Fprintln(os.Stdout, []any{"File written to successfully."}...)
 	return nil
 }
 
-func BuildPackage(projectPath string, errChecker e.ErrChecker) error {
+// BuildPackage builds the package using the Build() function
+func BuildPackage(projectPath string, errChecker e.ErrChecker, viper_instance *viper.Viper) error {
+	// Check if viper_instance is nil.
 	if viper_instance == nil {
 		errChecker.CheckErr("bldperr1", func() (any, error) {
 			return nil, errors.New(Emre["bldperr1"])
 		})
 	}
+	// Build the package.
 	fmt.Fprint(os.Stdout, []any{"Building package... "}...)
 	errChecker.CheckErr("bldperr2", func() (any, error) {
 		rec.InitConfig(projectPath)
@@ -273,7 +277,8 @@ func BuildPackage(projectPath string, errChecker e.ErrChecker) error {
 	return nil
 }
 
-func InstallPackage(dirName string, noInstallConf bool, errChecker e.ErrChecker) error {
+// InstallPackage installs the package from the given mirror.
+func InstallPackage(dirName string, noInstallConf bool, errChecker e.ErrChecker, viper_instance *viper.Viper) error {
 	projectPath := dirName + ".tar.gz"
 	downloadPath := "./" + projectPath
 	fullName := "https://" + os.Getenv(mirror) + "/projects/" + projectPath
@@ -297,7 +302,7 @@ func InstallPackage(dirName string, noInstallConf bool, errChecker e.ErrChecker)
 		fmt.Fprint(os.Stdout, []any{"Building package... "}...)
 		errChecker.CheckErr("insterr3", func() (any, error) {
 			os.Chdir(dirName)
-			err := BuildPackage(".", errChecker)
+			err := BuildPackage(".", errChecker, viper_instance)
 			return nil, err
 		})
 		fmt.Fprintln(os.Stdout, []any{"Installation completed! 🎉"}...)
