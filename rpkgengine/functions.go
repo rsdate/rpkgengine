@@ -134,7 +134,7 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool, errChecker
 		// Upgrade pip
 		fmt.Print("Upgrading pip... ")
 		errChecker.CheckErr("blderr2", func() (any, error) {
-			cmd2 := exec.Command("python3.13", "-m", "pip", "install", "--upgrade", "pip")
+			cmd2 := exec.Command("python3", "-m", "pip", "install", "--upgrade", "pip")
 			return nil, cmd2.Run()
 		})
 		fmt.Println("Pip upgraded successfully")
