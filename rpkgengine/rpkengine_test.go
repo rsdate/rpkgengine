@@ -61,7 +61,7 @@ func TestInstallDeps(t *testing.T) {
 }
 
 func TestInitVars(t *testing.T) {
-	var _, _ = rec.InitConfig("../../rpkg-test")
+	var _, _ = rec.InitConfig("../rpkg-test")
 	f := re.InitVars(viper_instance)
 	if !reflect.DeepEqual(f, exampleRpkgBuildFile) {
 		t.Errorf("Error: f != exampleRpkgBuildFile")
