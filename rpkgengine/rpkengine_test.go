@@ -22,7 +22,7 @@ var (
 		Deps:          []any{"none"},
 		BuildDeps:     []any{"build@latest"},
 		BuildWith:     "python3.13",
-		BuildCommands: []any{"python3.13 -m build"},
+		BuildCommands: []any{"python3 -m build"},
 	}
 	// viper_instance is the viper instance (used to remove redundancy)
 	viper_instance *viper.Viper = viper.GetViper()
