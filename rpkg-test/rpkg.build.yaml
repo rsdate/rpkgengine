@@ -10,4 +10,4 @@ build_deps:
   - build@latest
 build_with: python3.13
 build_commands:
-  - python3.13 -m build
+  - python3 -m build
