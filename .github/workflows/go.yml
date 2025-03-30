@@ -1,7 +1,7 @@
 # This workflow will build a golang project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: Go
+name: Test and upload reports
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
 
 jobs:
 
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -23,16 +23,19 @@ jobs:
     - name: Get go-junit-report
       run: go install github.com/jstemmer/go-junit-report/v2@latest
 
-    - name: Build
-      run: go build -v ./...
-
     - name: Test
       run: go test -v -coverprofile=coverage.txt 2>&1 ./... | go-junit-report -set-exit-code > junit.xml
       
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
     - name: Upload coverage reports to CodeCov
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
+        
     - name: Upload test results to CodeCov
       if: ${{ !cancelled() }}
       uses: codecov/test-results-action@v1
