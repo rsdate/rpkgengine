@@ -45,18 +45,16 @@ func InstallDeps(deps []any, buildDeps bool, name string, installCommands map[st
 			if buildDeps {
 				fmt.Println("No build dependencies")
 				break
-			} else {
-				fmt.Println("No dependencies")
-				break
 			}
+			fmt.Println("No dependencies")
+			break
 		} else if dep, ok := deps[i].(string); ok && !strings.Contains(dep, "@") {
 			if buildDeps {
 				fmt.Printf("Build dependency %s is not a valid dependency\n", []any{dep}...)
 				return fmt.Errorf("build dependency %s is not a valid dependency", dep)
-			} else {
-				fmt.Printf("Dependency %s is not a valid dependency\n", []any{dep}...)
-				return fmt.Errorf("dependency %s is not a valid dependency", dep)
 			}
+			fmt.Printf("Dependency %s is not a valid dependency\n", []any{dep}...)
+			return fmt.Errorf("dependency %s is not a valid dependency", dep)
 		} else if dep, ok := deps[i].(string); ok && strings.Contains(dep, "@latest") {
 			fmt.Printf("Installing %s... ", []any{deps[i]}...)
 			dep := strings.Split(deps[i].(string), "@")[0]
@@ -69,9 +67,8 @@ func InstallDeps(deps []any, buildDeps bool, name string, installCommands map[st
 				fmt.Printf("Could not install %s\n", []any{dep}...)
 				if buildDeps {
 					return fmt.Errorf("could not install build dependency %s", dep)
-				} else {
-					return fmt.Errorf("could not install dependency %s", dep)
 				}
+				return fmt.Errorf("could not install dependency %s", dep)
 			} else {
 				fmt.Printf("Installed %s\n", []any{dep}...)
 			}
@@ -87,9 +84,8 @@ func InstallDeps(deps []any, buildDeps bool, name string, installCommands map[st
 				fmt.Printf("Could not install %s\n", []any{dep}...)
 				if buildDeps {
 					return fmt.Errorf("could not install build dependency %s", dep)
-				} else {
-					return fmt.Errorf("could not install dependency %s", dep)
 				}
+				return fmt.Errorf("could not install dependency %s", dep)
 			} else {
 				fmt.Printf("Installed %s\n", []any{dep[0]}...)
 			}
@@ -99,22 +95,23 @@ func InstallDeps(deps []any, buildDeps bool, name string, installCommands map[st
 }
 
 // InitVars initializes the variables from the rpkg.build.yaml file and fills the RpkgBuildFile struct with the data.
-func InitVars(viper_instance *viper.Viper) RpkgBuildFile {
+func InitVars(viperinstance *viper.Viper) RpkgBuildFile {
 	f := RpkgBuildFile{
-		Name:          viper_instance.Get("name").(string),
-		Version:       viper_instance.Get("version").(string),
-		Revision:      viper_instance.Get("revision").(int),
-		Authors:       viper_instance.Get("authors").([]any),
-		Deps:          viper_instance.Get("deps").([]any),
-		BuildDeps:     viper_instance.Get("build_deps").([]any),
-		BuildWith:     viper_instance.Get("build_with").(string),
-		BuildCommands: viper_instance.Get("build_commands").([]any),
+		Name:          viperinstance.Get("name").(string),
+		Version:       viperinstance.Get("version").(string),
+		Revision:      viperinstance.Get("revision").(int),
+		Authors:       viperinstance.Get("authors").([]any),
+		Deps:          viperinstance.Get("deps").([]any),
+		BuildDeps:     viperinstance.Get("build_deps").([]any),
+		BuildWith:     viperinstance.Get("build_with").(string),
+		BuildCommands: viperinstance.Get("build_commands").([]any),
 	}
 	return f
 }
 
 // Build builds the package using the rpkg.build.yaml file as a struct. It also takes the project path and a boolean to check if the project folder should be removed after building.
 func Build(project string, f RpkgBuildFile, removeProjectFolder bool, errChecker e.ErrChecker) error {
+	buildwith := ""
 	os.Chdir(project + "/Package")
 	wd, _ := os.Getwd()
 	fmt.Printf("Building package in %v\n", wd[:len(wd)-8])
@@ -130,30 +127,29 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool, errChecker
 		for i := range val.([]byte) {
 			verStr += string(val.([]byte)[i])
 		}
-		fmt.Printf("Found version %s", verStr[7:])
+		fmt.Printf("Found version %s\n", verStr[7:len(verStr)-1])
+		if verStr[7:11] != lang[6:] {
+			fmt.Printf("Did not find version %s, will use python3 as executable\n", []any{verStr[7 : len(verStr)-1]}...)
+			buildwith = "python3"
+		}
+		buildwith = "python3.13"
 		// Upgrade pip
 		fmt.Print("Upgrading pip... ")
 		errChecker.CheckErr("blderr2", func() (any, error) {
-			cmd2 := exec.Command("python3", "-m", "pip", "install", "--upgrade", "pip")
+			cmd2 := exec.Command(buildwith, "-m", "pip", installCommand, upgradeOption, "pip")
 			return nil, cmd2.Run()
 		})
 		fmt.Println("Pip upgraded successfully")
 		// Install build dependencies
 		fmt.Println("Installing build dependencies... ")
 		errChecker.CheckErr("blderr3", func() (any, error) {
-			return nil, InstallDeps(f.BuildDeps, true, "pip", map[string][]string{
-				"latest":  {"install", "--upgrade"},
-				"version": {"install"},
-			}, "==")
+			return nil, InstallDeps(f.BuildDeps, true, "pip", installCommandArray, "==")
 		})
 		fmt.Println("Build dependencies installed")
 		// Install dependencies
 		fmt.Println("Installing dependencies... ")
 		errChecker.CheckErr("blderr4", func() (any, error) {
-			return nil, InstallDeps(f.Deps, false, "pip", map[string][]string{
-				"latest":  {"install", "--upgrade"},
-				"version": {"install"},
-			}, "==")
+			return nil, InstallDeps(f.Deps, false, "pip", installCommandArray, "==")
 		})
 		fmt.Println("Dependencies installed")
 		// Run build commands
@@ -257,9 +253,9 @@ func DownloadPackage(filepath string, url string, errChecker e.ErrChecker) error
 }
 
 // BuildPackage builds the package using the Build() function
-func BuildPackage(projectPath string, errChecker e.ErrChecker, viper_instance *viper.Viper) error {
-	// Check if viper_instance is nil.
-	if viper_instance == nil {
+func BuildPackage(projectPath string, errChecker e.ErrChecker, viperinstance *viper.Viper) error {
+	// Check if viperinstance is nil.
+	if viperinstance == nil {
 		errChecker.CheckErr("bldperr1", func() (any, error) {
 			return nil, errors.New(Emre["bldperr1"])
 		})
@@ -268,7 +264,7 @@ func BuildPackage(projectPath string, errChecker e.ErrChecker, viper_instance *v
 	fmt.Fprint(os.Stdout, []any{"Building package... "}...)
 	errChecker.CheckErr("bldperr2", func() (any, error) {
 		rec.InitConfig(projectPath)
-		f := InitVars(viper_instance)
+		f := InitVars(viperinstance)
 		os.Chdir(projectPath + "/Package")
 		err := Build(projectPath, f, false, ErrCheckerBuild)
 		return nil, err
@@ -278,7 +274,7 @@ func BuildPackage(projectPath string, errChecker e.ErrChecker, viper_instance *v
 }
 
 // InstallPackage installs the package from the given mirror.
-func InstallPackage(dirName string, noInstallConf bool, errChecker e.ErrChecker, viper_instance *viper.Viper) error {
+func InstallPackage(dirName string, noInstallConf bool, errChecker e.ErrChecker, viperinstance *viper.Viper) error {
 	projectPath := dirName + ".tar.gz"
 	downloadPath := "./" + projectPath
 	fullName := "https://" + os.Getenv(mirror) + "/projects/" + projectPath
@@ -302,7 +298,7 @@ func InstallPackage(dirName string, noInstallConf bool, errChecker e.ErrChecker,
 		fmt.Fprint(os.Stdout, []any{"Building package... "}...)
 		errChecker.CheckErr("insterr3", func() (any, error) {
 			os.Chdir(dirName)
-			err := BuildPackage(".", errChecker, viper_instance)
+			err := BuildPackage(".", errChecker, viperinstance)
 			return nil, err
 		})
 		fmt.Fprintln(os.Stdout, []any{"Installation completed! 🎉"}...)
