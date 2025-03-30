@@ -10,6 +10,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	testDirectory string = "../rpkg-test/"
+	errPrefix     string = "Error: %v"
+)
+
 var (
 	// f is the struct that holds the data from rpkg.build.yaml file
 	f re.RpkgBuildFile = re.RpkgBuildFile{}
@@ -47,7 +52,7 @@ func TestInstallDeps(t *testing.T) {
 		return nil, err
 	})
 	if err != nil {
-		t.Errorf("Error: %v", err)
+		t.Errorf(errPrefix, err)
 	}
 	Deps := []any{"build@1.2.2.post1"}
 	var _, Err = errCheckerTest.CheckErr("tsterr1", func() (any, error) {
@@ -55,7 +60,7 @@ func TestInstallDeps(t *testing.T) {
 		return nil, err
 	})
 	if err != nil {
-		t.Errorf("Error: %v", Err)
+		t.Errorf(errPrefix, Err)
 	}
 
 }
@@ -70,13 +75,13 @@ func TestInitVars(t *testing.T) {
 
 func TestRpkgengineBuild(t *testing.T) {
 	var _, err = errCheckerTest.CheckErr("tsterr1", func() (any, error) {
-		var _, err = rec.InitConfig("../rpkg-test/")
+		var _, err = rec.InitConfig(testDirectory)
 		f = re.InitVars(viper_instance)
-		err = re.Build("../rpkg-test", f, false, errCheckerTest)
+		err = re.Build(errPrefix, f, false, errCheckerTest)
 		return nil, err
 	})
 	if err != nil {
-		t.Errorf("Error: %v", err)
+		t.Errorf(errPrefix, err)
 	}
 }
 
@@ -86,18 +91,18 @@ func TestDownloadPackage(t *testing.T) {
 		return nil, err
 	})
 	if err != nil {
-		t.Errorf("Error: %v", err)
+		t.Errorf(errPrefix, err)
 	}
 }
 
 func TestBuildPackage(t *testing.T) {
 	var _, err = errCheckerTest.CheckErr("tsterr1", func() (any, error) {
-		var _, err = rec.InitConfig("../rpkg-test/")
-		err = re.BuildPackage("../rpkg-test/", errCheckerTest, viper_instance)
+		var _, err = rec.InitConfig(testDirectory)
+		err = re.BuildPackage(testDirectory, errCheckerTest, viper_instance)
 		return nil, err
 	})
 	if err != nil {
-		t.Errorf("Error: %v", err)
+		t.Errorf(errPrefix, err)
 	}
 }
 

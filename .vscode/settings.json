@@ -1,0 +1,6 @@
+{
+    "sonarlint.connectedMode.project": {
+        "connectionId": "rsdate",
+        "projectKey": "rsdate_rpkgengine"
+    }
+}

@@ -4,6 +4,11 @@ import (
 	e "github.com/rsdate/utils/errors"
 )
 
+const (
+	installCommand string = "install"
+	upgradeOption  string = "--upgrade"
+)
+
 var (
 	conf            string
 	mirror          string = "RPKG_MIRROR"
@@ -13,5 +18,9 @@ var (
 		PanicMode: "true",
 		EM:        Emre,
 		TestMode:  false,
+	}
+	installCommandArray map[string][]string = map[string][]string{
+		"latest":  {"install", "--upgrade"},
+		"version": {"install"},
 	}
 )
