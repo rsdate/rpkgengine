@@ -27,6 +27,7 @@ jobs:
       run: go test -v -coverprofile=coverage.txt 2>&1 ./... | go-junit-report -set-exit-code > junit.xml
       
   upload:
+    needs: test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
