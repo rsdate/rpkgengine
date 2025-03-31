@@ -129,10 +129,11 @@ func Build(project string, f RpkgBuildFile, removeProjectFolder bool, errChecker
 		}
 		fmt.Printf("Found version %s\n", verStr[7:len(verStr)-1])
 		if verStr[7:11] != lang[6:] {
-			fmt.Printf("Did not find version %s, will use python3 as executable\n", []any{verStr[7 : len(verStr)-1]}...)
+			fmt.Printf("Did not find version %s, will use python3 as executable\n", []any{lang[6:]}...)
 			buildwith = "python3"
+		} else {
+			buildwith = "python3.13"
 		}
-		buildwith = "python3.13"
 		// Upgrade pip
 		fmt.Print("Upgrading pip... ")
 		errChecker.CheckErr("blderr2", func() (any, error) {
