@@ -26,19 +26,37 @@ jobs:
     - name: Test
       run: go test -v -coverprofile=coverage.txt 2>&1 ./... | go-junit-report -set-exit-code > junit.xml
       
+    - name: Save the outputs to a cache
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ./coverage.txt
+          ./junit.xml
+        key: ${{ runner.os }}-coverage-junit-${{ hashFiles('**/go.sum') }} 
+        
   upload:
     needs: test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+
+    - name: Restore the cache
+      id: restore-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          coverage.txt
+          junit.xml
+        key: ${{ runner.os }}-coverage-junit-${{ hashFiles('**/go.sum') }} 
     
     - name: Upload coverage reports to CodeCov
+      if: steps.restore-cache.outputs.cache-hit == 'true'
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         
     - name: Upload test results to CodeCov
-      if: ${{ !cancelled() }}
+      if: steps.restore-cache.outputs.cache-hit == 'true'
       uses: codecov/test-results-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
