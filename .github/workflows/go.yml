@@ -33,6 +33,8 @@ jobs:
           ./coverage.txt
           ./junit.xml
         key: ${{ runner.os }}-coverage-junit-${{ hashFiles('**/go.sum') }} 
+        restore-keys: |
+          ${{ runner.os }}-coverage-junit-
         
   upload:
     needs: test
