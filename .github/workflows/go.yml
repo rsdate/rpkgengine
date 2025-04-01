@@ -32,9 +32,7 @@ jobs:
         path: |
           ./coverage.txt
           ./junit.xml
-        key: ${{ runner.os }}-coverage-junit-${{ hashFiles('**/go.sum') }} 
-        restore-keys: |
-          ${{ runner.os }}-coverage-junit-
+        key: ${{ runner.os }}-coverage-junit
         
   upload:
     needs: test
@@ -49,7 +47,7 @@ jobs:
         path: |
           coverage.txt
           junit.xml
-        key: ${{ runner.os }}-coverage-junit-${{ hashFiles('**/go.sum') }} 
+        key: ${{ runner.os }}-coverage-junit
     
     - name: Upload coverage reports to CodeCov
       if: steps.restore-cache.outputs.cache-hit == 'true'
